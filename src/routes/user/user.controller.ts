@@ -10,7 +10,7 @@ import { unlink } from 'fs/promises';
 import { basename } from 'path';
 
 const getUserInfo = asyncHandler(async (req: Request, res: Response): Promise<void> => {
-  const user = await User.query().findById(req.user.id).select("id", "firstName", "lastName", "email", "role", "created_at");
+  const user = await User.query().findById(req.user.id).select("id", "firstName", "lastName", "email", "role", "image", "created_at");
 
   if (!user) {
     throw new CustomError(404, "User not found");
