@@ -36,9 +36,11 @@ const updateUserInfoValidation = yup.object().shape({
 });
 
 const getUsersValidation = yup.object({}).concat(paginationValidation);
+const getOrdersValidation = yup.object({}).concat(paginationValidation);
 
 export { 
   getUsersValidation,
+  getOrdersValidation,
   createUserValidation, 
   loginUserValidation, 
   refreshUserTokenValidation, 
