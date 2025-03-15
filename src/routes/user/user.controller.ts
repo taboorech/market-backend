@@ -2,7 +2,7 @@ import asyncHandler from 'express-async-handler';
 import { Request, Response } from 'express';
 import Order from '../../models/order.model';
 import { getCart as getCartDB } from '../../repository/cart';
-import { changeUserRoleValidation, updateUserInfoValidation } from '../../yup/user.scheme';
+import { changeUserRoleValidation, getUsersValidation, updateUserInfoValidation } from '../../yup/user.scheme';
 import User from '../../models/user.model';
 import { CustomError } from '../../libs/classes/custom-error.class';
 import * as bcrypt from 'bcrypt';
@@ -17,6 +17,37 @@ const getUserInfo = asyncHandler(async (req: Request, res: Response): Promise<vo
   }
 
   res.json(user);
+});
+
+const getAllUsers = asyncHandler(async (req: Request, res: Response): Promise<void> => {
+  const { offset, limit, search, ids } = await getUsersValidation.validate(req.query, {
+    abortEarly: false,
+    stripUnknown: true,
+  });
+
+  const usersRequest = User.query()
+    .modify(builder => {
+      if (ids && ids.length > 0) {
+        builder.whereIn("id", ids);
+      }
+
+      if (search) {
+        builder.where((builder) => {
+          builder
+            .whereILike("firstName", `%${search}%`)
+            .orWhereILike("lastName", `%${search}%`)
+            .orWhereILike("email", `%${search}%`);
+        });
+      }
+    })
+
+  const users = await usersRequest.offset(offset).limit(limit);
+  const usersCount = await usersRequest.resultSize();
+  
+  res.json({ 
+    data: users,
+    total: usersCount
+  });
 });
 
 const updateUserInfo = asyncHandler(async (req: Request, res: Response): Promise<void> => {
@@ -99,4 +130,4 @@ const updateUserRole = asyncHandler(async (req: Request, res: Response): Promise
   res.sendStatus(200);
 });
 
-export { getUserInfo, updateUserInfo, getCart, getOrders, updateUserRole };
+export { getUserInfo, getAllUsers, updateUserInfo, getCart, getOrders, updateUserRole };

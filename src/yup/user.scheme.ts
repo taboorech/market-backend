@@ -1,5 +1,6 @@
 import * as yup from "yup";
 import { UserRole } from "../libs/enum/user-role.enum";
+import { paginationValidation } from "./main.scheme";
 
 const createUserValidation = yup.object().shape({
   email: yup.string().trim().email().required('Email is required'),
@@ -34,7 +35,10 @@ const updateUserInfoValidation = yup.object().shape({
   password: yup.string().optional(),
 });
 
+const getUsersValidation = yup.object({}).concat(paginationValidation);
+
 export { 
+  getUsersValidation,
   createUserValidation, 
   loginUserValidation, 
   refreshUserTokenValidation, 
