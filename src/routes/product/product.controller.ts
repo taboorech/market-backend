@@ -81,13 +81,19 @@ const createProduct = asyncHandler(async (req: Request, res: Response): Promise<
 });
 
 const getProductsByCategory = asyncHandler(async (req: Request, res: Response): Promise<void> => {
-  const { category } = await getProductsByCategoryValidation.validate(req.params, { abortEarly: false });
+  const { category, offset, limit } = await getProductsByCategoryValidation.validate({...req.params, ...req.query}, { abortEarly: false });
 
-  const products = await Product.query()
+  const productsRequest = Product.query()
     .where("category_id", category)
     .withGraphFetched("images")
 
-  res.json(products);
+  const total = await productsRequest.resultSize();
+  const products = await productsRequest.offset(offset).limit(limit);
+
+  res.json({
+    total,
+    data: products
+  });
 });
 
 const manageCart = asyncHandler(async (req: Request, res: Response): Promise<void> => {
