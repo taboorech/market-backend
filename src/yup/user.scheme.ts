@@ -38,6 +38,10 @@ const updateUserInfoValidation = yup.object().shape({
 const getUsersValidation = yup.object({}).concat(paginationValidation);
 const getOrdersValidation = yup.object({}).concat(paginationValidation);
 
+const deleteUserValidation = yup.object().shape({
+  user: yup.number().required('User ID must contain value')
+});
+
 export { 
   getUsersValidation,
   getOrdersValidation,
@@ -46,5 +50,6 @@ export {
   refreshUserTokenValidation, 
   editProfileValidation, 
   changeUserRoleValidation,
-  updateUserInfoValidation 
+  updateUserInfoValidation,
+  deleteUserValidation 
 };

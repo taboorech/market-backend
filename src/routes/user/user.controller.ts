@@ -2,7 +2,7 @@ import asyncHandler from 'express-async-handler';
 import { Request, Response } from 'express';
 import Order from '../../models/order.model';
 import { getCart as getCartDB } from '../../repository/cart';
-import { changeUserRoleValidation, getOrdersValidation, getUsersValidation, updateUserInfoValidation } from '../../yup/user.scheme';
+import { changeUserRoleValidation, deleteUserValidation, getOrdersValidation, getUsersValidation, updateUserInfoValidation } from '../../yup/user.scheme';
 import User from '../../models/user.model';
 import { CustomError } from '../../libs/classes/custom-error.class';
 import * as bcrypt from 'bcrypt';
@@ -145,4 +145,17 @@ const updateUserRole = asyncHandler(async (req: Request, res: Response): Promise
   res.sendStatus(200);
 });
 
-export { getUserInfo, getAllUsers, updateUserInfo, getCart, getOrders, updateUserRole };
+const deleteUser = asyncHandler(async (req: Request, res: Response): Promise<void> => {
+  const { user: userId } = await deleteUserValidation.validate(req.params, { abortEarly: false });
+
+  const foundUser = await User.query().findOne({ id: userId });
+
+  if(!foundUser)
+    throw new CustomError(404, 'User not found');
+
+  await foundUser.$query().delete();
+
+  res.sendStatus(200);
+})
+
+export { getUserInfo, getAllUsers, updateUserInfo, getCart, getOrders, updateUserRole, deleteUser };
