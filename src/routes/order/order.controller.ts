@@ -37,15 +37,7 @@ const createOrder = asyncHandler(async (req: Request, res: Response): Promise<vo
 
     await Cart.query(trx).where("user_id", userId).del();
 
-    res.status(201).json({
-      message: "Order created successfully",
-      order: {
-        id: newOrder.id,
-        total_price: newOrder.total_price,
-        status: newOrder.status,
-        items: orderItems,
-      },
-    });
+    res.sendStatus(201);
   });
 });
 
