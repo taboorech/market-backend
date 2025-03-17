@@ -46,4 +46,6 @@ const manageCartValidation = yup.object().shape({
   quantity: yup.number().default(1)
 });
 
-export { createProductValidation, getProductsByCategoryValidation, manageCartValidation };
+const getAllProductsValidation = yup.object().shape({}).concat(paginationValidation);
+
+export { getAllProductsValidation, createProductValidation, getProductsByCategoryValidation, manageCartValidation };
