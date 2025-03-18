@@ -86,15 +86,12 @@ const createProduct = asyncHandler(async (req: Request, res: Response): Promise<
     if (main_image) {
       const mainImageOriginalname = req.files.find(({ originalname }) => originalname === main_image).filename;
 
-      const mainImageUrl = filesToInsert.find(({ path: url }) => 
+      const mainImagePath = filesToInsert.find(({ path: url }) => 
         basename(url) === mainImageOriginalname
       );
     
-      if (mainImageUrl) {
-        const mainImage = await ProductsImages.query().findOne({ 
-          product: product.id, 
-          path: mainImageUrl 
-        });
+      if (mainImagePath) {
+        const mainImage = await ProductsImages.query().findOne(mainImagePath);
     
         if (mainImage) {
           await product.$query().patchAndFetch({ main_image: mainImage.id });
