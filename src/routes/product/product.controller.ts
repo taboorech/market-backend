@@ -58,7 +58,7 @@ const getProduct = asyncHandler(async (req: Request, res: Response): Promise<voi
     { 
       id: number; 
       title: string; 
-      attributes: { title: string; value: string }[];
+      attributes: { id: number; title: string; group_id: number; value: string }[];
     }
   >();
 
@@ -76,7 +76,9 @@ const getProduct = asyncHandler(async (req: Request, res: Response): Promise<voi
     }
 
     groupMap.get(group.id)!.attributes.push({
+      id: attribute.id,
       title: attribute.title,
+      group_id: group.id,
       value,
     });
   });
