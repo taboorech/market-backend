@@ -1,7 +1,5 @@
 import asyncHandler from 'express-async-handler';
 import { Request, Response } from 'express';
-import Category from '../../models/category.model';
-import { getAllCategoriesValidation } from '../../yup/category.scheme';
 import AttributeGroup from '../../models/attribute-group.model';
 import { createAttributeValidation, createGroupValidation, getAttributesByGroupValidation, getGroupsValidation } from '../../yup/attribute.scheme';
 import Attribute from '../../models/attribute.model';
@@ -30,9 +28,6 @@ const createAttribute = asyncHandler(async (req: Request, res: Response): Promis
 
 const getGroups = asyncHandler(async (req: Request, res: Response): Promise<void> => {
   const { offset, limit, search, ids } = await getGroupsValidation.validate(req.query, { abortEarly: false });
-
-  console.log(ids);
-  
 
   const groupsRequest = AttributeGroup
     .query()
