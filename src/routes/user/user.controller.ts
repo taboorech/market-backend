@@ -2,7 +2,7 @@ import asyncHandler from 'express-async-handler';
 import { Request, Response } from 'express';
 import Order from '../../models/order.model';
 import { getCart as getCartDB } from '../../repository/cart';
-import { changeUserRoleValidation, updateUserInfoValidation } from '../../yup/user.scheme';
+import { changeUserRoleValidation, deleteUserValidation, getOrdersValidation, getUsersValidation, updateUserInfoValidation } from '../../yup/user.scheme';
 import User from '../../models/user.model';
 import { CustomError } from '../../libs/classes/custom-error.class';
 import * as bcrypt from 'bcrypt';
@@ -10,13 +10,44 @@ import { unlink } from 'fs/promises';
 import { basename } from 'path';
 
 const getUserInfo = asyncHandler(async (req: Request, res: Response): Promise<void> => {
-  const user = await User.query().findById(req.user.id).select("id", "firstName", "lastName", "email", "role", "created_at");
+  const user = await User.query().findById(req.user.id).select("id", "firstName", "lastName", "email", "role", "image", "created_at");
 
   if (!user) {
     throw new CustomError(404, "User not found");
   }
 
   res.json(user);
+});
+
+const getAllUsers = asyncHandler(async (req: Request, res: Response): Promise<void> => {
+  const { offset, limit, search, ids } = await getUsersValidation.validate(req.query, {
+    abortEarly: false,
+    stripUnknown: true,
+  });
+
+  const usersRequest = User.query()
+    .modify(builder => {
+      if (ids && ids.length > 0) {
+        builder.whereIn("id", ids);
+      }
+
+      if (search) {
+        builder.where((builder) => {
+          builder
+            .whereILike("firstName", `%${search}%`)
+            .orWhereILike("lastName", `%${search}%`)
+            .orWhereILike("email", `%${search}%`);
+        });
+      }
+    })
+
+  const users = await usersRequest.offset(offset).limit(limit);
+  const usersCount = await usersRequest.resultSize();
+  
+  res.json({ 
+    data: users,
+    total: usersCount
+  });
 });
 
 const updateUserInfo = asyncHandler(async (req: Request, res: Response): Promise<void> => {
@@ -61,28 +92,43 @@ const getCart = asyncHandler(async (req: Request, res: Response): Promise<void> 
 });
 
 const getOrders = asyncHandler(async (req: Request, res: Response): Promise<void> => {
-  const orders = await Order.query()
-    .where("user_id", req.user.id)
-    .withGraphFetched("items.product")
-    .modifyGraph("items.product", (builder) => {
-      builder.select("id", "title", "price");
-    })
-    .orderBy("created_at", "desc");
+  const { offset, limit, search, ids } = await getOrdersValidation.validate(req.query, { 
+    abortEarly: false,
+    stripUnknown: true
+  });
 
-  const formattedOrders = orders.map((order) => ({
-    id: order.id,
-    total_price: order.total_price,
-    status: order.status,
-    created_at: order.created_at,
-    items: order.items?.map((item) => ({
-      product_id: item.product_id,
-      title: item.product?.title,
-      price: item.product?.price,
-      quantity: item.quantity,
-    })),
-  }));
+  const ordersRequest = Order.query()
+  .where("user_id", req.user.id)
+  .withGraphFetched("[items.product, user]")
+  .modifyGraph("items.product", (builder) => {
+    builder.select("id", "title", "price");
+  })
+  .modifyGraph('user', builder => {
+    builder.select("id", "firstName", "lastName")
+  })
+  .modify((builder) => {
+    if (ids && ids.length > 0) {
+      builder.whereIn("id", ids);
+    }
 
-  res.json(formattedOrders);
+    if (search) {
+      builder.whereILike("id", `%${search}%`)
+        .orWhereExists(
+          Order.relatedQuery("items")
+            .joinRelated("product")
+            .whereILike("product.title", `%${search}%`)
+        );
+    }
+  })
+  .orderBy("created_at", "desc");
+
+  const orders = await ordersRequest.offset(offset).limit(limit);
+  const total = await ordersRequest.resultSize();
+
+  res.json({
+    total,
+    data: orders
+  });
 });
 
 const updateUserRole = asyncHandler(async (req: Request, res: Response): Promise<void> => {
@@ -99,4 +145,17 @@ const updateUserRole = asyncHandler(async (req: Request, res: Response): Promise
   res.sendStatus(200);
 });
 
-export { getUserInfo, updateUserInfo, getCart, getOrders, updateUserRole };
+const deleteUser = asyncHandler(async (req: Request, res: Response): Promise<void> => {
+  const { user: userId } = await deleteUserValidation.validate(req.params, { abortEarly: false });
+
+  const foundUser = await User.query().findOne({ id: userId });
+
+  if(!foundUser)
+    throw new CustomError(404, 'User not found');
+
+  await foundUser.$query().delete();
+
+  res.sendStatus(200);
+})
+
+export { getUserInfo, getAllUsers, updateUserInfo, getCart, getOrders, updateUserRole, deleteUser };

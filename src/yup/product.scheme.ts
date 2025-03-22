@@ -1,5 +1,6 @@
 import * as yup from 'yup';
 import { ManageCartType } from '../libs/enum/manage-cart-type.enum';
+import { paginationValidation } from './main.scheme';
 
 const createProductValidation = yup.object().shape({
   title: yup
@@ -37,7 +38,7 @@ const createProductValidation = yup.object().shape({
 
 const getProductsByCategoryValidation = yup.object().shape({
   category: yup.number().required('Category id can\'t be empty'), 
-});
+}).concat(paginationValidation);
 
 const manageCartValidation = yup.object().shape({
   product: yup.number().required('Product id can\'t be empty'), 
@@ -45,4 +46,6 @@ const manageCartValidation = yup.object().shape({
   quantity: yup.number().default(1)
 });
 
-export { createProductValidation, getProductsByCategoryValidation, manageCartValidation };
+const getAllProductsValidation = yup.object().shape({}).concat(paginationValidation);
+
+export { getAllProductsValidation, createProductValidation, getProductsByCategoryValidation, manageCartValidation };

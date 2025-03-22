@@ -1,4 +1,7 @@
 import * as yup from 'yup';
+import { paginationValidation } from './main.scheme';
+
+const getAllCategoriesValidation = yup.object().shape({}).concat(paginationValidation);
 
 const createCategoryValidation = yup.object().shape({
   title: yup
@@ -13,4 +16,4 @@ const createCategoryValidation = yup.object().shape({
     .optional()
 });
 
-export { createCategoryValidation };
+export { getAllCategoriesValidation, createCategoryValidation };
