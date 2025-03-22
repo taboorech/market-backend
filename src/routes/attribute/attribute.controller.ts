@@ -1,7 +1,7 @@
 import asyncHandler from 'express-async-handler';
 import { Request, Response } from 'express';
 import AttributeGroup from '../../models/attribute-group.model';
-import { createAttributeValidation, createGroupValidation, getAttributesByGroupValidation, getGroupsValidation } from '../../yup/attribute.scheme';
+import { createAttributeValidation, createGroupValidation, deleteAttributeGroupValidation, getAttributesByGroupValidation, getGroupsValidation } from '../../yup/attribute.scheme';
 import Attribute from '../../models/attribute.model';
 
 const createGroup = asyncHandler(async (req: Request, res: Response): Promise<void> => {
@@ -74,4 +74,12 @@ const getAttributesByGroup = asyncHandler(async (req: Request, res: Response): P
   res.json({ total, data });
 });
 
-export { createGroup, createAttribute, getGroups, getAttributesByGroup }
+const deleteGroup = asyncHandler(async (req: Request, res: Response): Promise<void> => {
+  const { id } = await deleteAttributeGroupValidation.validate(req.params, { abortEarly: false });
+
+  await AttributeGroup.query().delete().where({ id });
+
+  res.sendStatus(200);
+});
+
+export { createGroup, createAttribute, getGroups, getAttributesByGroup, deleteGroup }
