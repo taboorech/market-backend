@@ -7,6 +7,8 @@ import { basename } from 'path';
 import Cart from '../../models/cart.model';
 import { CustomError } from '../../libs/classes/custom-error.class';
 import { ManageCartType } from '../../libs/enum/manage-cart-type.enum';
+import AttributeGroup from '../../models/attribute-group.model';
+import ProductAttribute from '../../models/product-attribute.model';
 
 const getAllProducts = asyncHandler(async (req: Request, res: Response): Promise<void> => {
   const { offset, limit, search, ids } = await getAllProductsValidation.validate(req.query, { abortEarly: false });
@@ -47,7 +49,45 @@ const getProduct = asyncHandler(async (req: Request, res: Response): Promise<voi
   if(!product)
     throw new CustomError(404, 'Product not found');
 
-  res.json(product);
+  const productAttributes = await ProductAttribute
+    .query()
+    .where('product_id', product.id)
+    .withGraphFetched('attribute.group');
+
+  const groupMap = new Map<
+    number, 
+    { 
+      id: number; 
+      title: string; 
+      attributes: { title: string; value: string }[];
+    }
+  >();
+
+  productAttributes.forEach(({ attribute, value }) => {
+    const group = attribute?.group;
+
+    if (!group) return;
+
+    if (!groupMap.has(group.id)) {
+      groupMap.set(group.id, {
+        id: group.id,
+        title: group.title,
+        attributes: [],
+      });
+    }
+
+    groupMap.get(group.id)!.attributes.push({
+      title: attribute.title,
+      value,
+    });
+  });
+
+  const attributeGroups = Array.from(groupMap.values());
+
+  res.json({
+    ...product,
+    attributeGroups,
+  });
 });
 
 const createProduct = asyncHandler(async (req: Request, res: Response): Promise<void> => {
