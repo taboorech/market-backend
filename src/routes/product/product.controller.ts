@@ -87,7 +87,7 @@ const getProduct = asyncHandler(async (req: Request, res: Response): Promise<voi
 
   res.json({
     ...product,
-    attributeGroups,
+    attributes: attributeGroups,
   });
 });
 
