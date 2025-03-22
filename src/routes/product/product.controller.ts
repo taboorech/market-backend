@@ -111,7 +111,14 @@ const createProduct = asyncHandler(async (req: Request, res: Response): Promise<
       value: attr.value
     }));
 
-    await ProductAttribute.query().insert(attributeValues);
+    await ProductAttribute.transaction(async trx => {
+      await ProductAttribute
+        .query(trx)
+        .toKnexQuery()
+        .insert(attributeValues)
+        .onConflict()
+        .ignore();
+    });
   }
 
   if (req.files && Array.isArray(req.files) && req.files.length) {
