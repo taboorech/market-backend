@@ -7,7 +7,6 @@ import { basename } from 'path';
 import Cart from '../../models/cart.model';
 import { CustomError } from '../../libs/classes/custom-error.class';
 import { ManageCartType } from '../../libs/enum/manage-cart-type.enum';
-import AttributeGroup from '../../models/attribute-group.model';
 import ProductAttribute from '../../models/product-attribute.model';
 
 const getAllProducts = asyncHandler(async (req: Request, res: Response): Promise<void> => {
@@ -93,6 +92,7 @@ const getProduct = asyncHandler(async (req: Request, res: Response): Promise<voi
 const createProduct = asyncHandler(async (req: Request, res: Response): Promise<void> => {
   const {
     main_image,
+    attributes,
     ...validValues
    } = 
     await createProductValidation.validate({
@@ -101,6 +101,16 @@ const createProduct = asyncHandler(async (req: Request, res: Response): Promise<
     }, { abortEarly: false });
 
   const product = await Product.query().insert(validValues);
+
+  if (attributes && Array.isArray(attributes) && attributes.length) {
+    const attributeValues = attributes.map(attr => ({
+      product_id: product.id,
+      attribute_id: attr.attribute_id,
+      value: attr.value
+    }));
+
+    await ProductAttribute.query().insert(attributeValues);
+  }
 
   if (req.files && Array.isArray(req.files) && req.files.length) {
     const serverHost = `${req.protocol}://${req.get("host")}`;
