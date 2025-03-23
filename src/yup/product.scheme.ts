@@ -34,6 +34,12 @@ const createProductValidation = yup.object().shape({
     .string()
     .min(3, 'Can\'t containt less than 3 symbols')
     .optional(),
+  attributes: yup.array().of(
+    yup.object({
+      attribute_id: yup.number().required(),
+      value: yup.string().required()
+    })
+  ).optional(),
 });
 
 const getProductsByCategoryValidation = yup.object().shape({

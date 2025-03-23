@@ -7,6 +7,7 @@ import { basename } from 'path';
 import Cart from '../../models/cart.model';
 import { CustomError } from '../../libs/classes/custom-error.class';
 import { ManageCartType } from '../../libs/enum/manage-cart-type.enum';
+import ProductAttribute from '../../models/product-attribute.model';
 
 const getAllProducts = asyncHandler(async (req: Request, res: Response): Promise<void> => {
   const { offset, limit, search, ids } = await getAllProductsValidation.validate(req.query, { abortEarly: false });
@@ -47,12 +48,53 @@ const getProduct = asyncHandler(async (req: Request, res: Response): Promise<voi
   if(!product)
     throw new CustomError(404, 'Product not found');
 
-  res.json(product);
+  const productAttributes = await ProductAttribute
+    .query()
+    .where('product_id', product.id)
+    .withGraphFetched('attribute.group');
+
+  const groupMap = new Map<
+    number, 
+    { 
+      id: number; 
+      title: string; 
+      attributes: { id: number; title: string; group_id: number; value: string }[];
+    }
+  >();
+
+  productAttributes.forEach(({ attribute, value }) => {
+    const group = attribute?.group;
+
+    if (!group) return;
+
+    if (!groupMap.has(group.id)) {
+      groupMap.set(group.id, {
+        id: group.id,
+        title: group.title,
+        attributes: [],
+      });
+    }
+
+    groupMap.get(group.id)!.attributes.push({
+      id: attribute.id,
+      title: attribute.title,
+      group_id: group.id,
+      value,
+    });
+  });
+
+  const attributeGroups = Array.from(groupMap.values());
+
+  res.json({
+    ...product,
+    attributes: attributeGroups,
+  });
 });
 
 const createProduct = asyncHandler(async (req: Request, res: Response): Promise<void> => {
   const {
     main_image,
+    attributes,
     ...validValues
    } = 
     await createProductValidation.validate({
@@ -61,6 +103,23 @@ const createProduct = asyncHandler(async (req: Request, res: Response): Promise<
     }, { abortEarly: false });
 
   const product = await Product.query().insert(validValues);
+
+  if (attributes && Array.isArray(attributes) && attributes.length) {
+    const attributeValues = attributes.map(attr => ({
+      product_id: product.id,
+      attribute_id: attr.attribute_id,
+      value: attr.value
+    }));
+
+    await ProductAttribute.transaction(async trx => {
+      await ProductAttribute
+        .query(trx)
+        .toKnexQuery()
+        .insert(attributeValues)
+        .onConflict()
+        .ignore();
+    });
+  }
 
   if (req.files && Array.isArray(req.files) && req.files.length) {
     const serverHost = `${req.protocol}://${req.get("host")}`;
