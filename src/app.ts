@@ -9,6 +9,7 @@ import { authMiddleware } from './middleware/auth-middleware';
 import { createUserRoutes } from './routes/user/user.routes';
 import { createOrderRoutes } from './routes/order/order.routes';
 import { createAttributeRoutes } from './routes/attribute/attribute.routes';
+import { createCommentRoutes } from './routes/comment/comment.routes';
 
 function createServer() {
   const app = express();
@@ -30,6 +31,7 @@ function createServer() {
   app.use('/user', authMiddleware, createUserRoutes());
   app.use('/order', createOrderRoutes());
   app.use('/attribute', createAttributeRoutes());
+  app.use('/comment', createCommentRoutes());
 
   // error handler
   app.use(errorHandler);
