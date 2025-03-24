@@ -4,7 +4,7 @@ import { authMiddleware } from "../../middleware/auth-middleware";
 import sellerRole from "../../middleware/seller-role";
 import multer from "multer";
 import { multerStorage } from "../../libs/constantas/multer.const";
-import { manageCart, createProduct, getProduct, getProductsByCategory, getAllProducts } from "./product.controller";
+import { manageCart, createProduct, getProduct, getProductsByCategory, getAllProducts, deleteProduct } from "./product.controller";
 
 const createProductRoutes = () => {
   const router = Router();
@@ -16,6 +16,7 @@ const createProductRoutes = () => {
   router.get('/category/:category', optionalAuthMiddleware, getProductsByCategory);
   router.post('/', authMiddleware, sellerRole, uploads.array('images'), createProduct);
   router.post('/cart/:product', authMiddleware, manageCart);
+  router.delete('/:id', authMiddleware, sellerRole, deleteProduct);
 
   return router;
 };

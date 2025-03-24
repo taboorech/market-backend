@@ -1,13 +1,14 @@
 import asyncHandler from 'express-async-handler';
 import { Request, Response } from 'express';
 import Product from '../../models/product.model';
-import { createProductValidation, getAllProductsValidation, getProductsByCategoryValidation, manageCartValidation } from '../../yup/product.scheme';
+import { createProductValidation, deleteProductValidation, getAllProductsValidation, getProductsByCategoryValidation, manageCartValidation } from '../../yup/product.scheme';
 import ProductsImages from '../../models/product-images.model';
-import { basename } from 'path';
+import { basename, join } from 'path';
 import Cart from '../../models/cart.model';
 import { CustomError } from '../../libs/classes/custom-error.class';
 import { ManageCartType } from '../../libs/enum/manage-cart-type.enum';
 import ProductAttribute from '../../models/product-attribute.model';
+import { unlink } from 'fs/promises';
 
 const getAllProducts = asyncHandler(async (req: Request, res: Response): Promise<void> => {
   const { offset, limit, search, ids } = await getAllProductsValidation.validate(req.query, { abortEarly: false });
@@ -230,4 +231,23 @@ const manageCart = asyncHandler(async (req: Request, res: Response): Promise<voi
   res.sendStatus(200);
 });
 
-export { getAllProducts, getProduct, createProduct, getProductsByCategory, manageCart };
+const deleteProduct = asyncHandler(async (req: Request, res: Response): Promise<void> => {
+  const { id } = await deleteProductValidation.validate(req.params, { abortEarly: false });
+
+  const product = await Product.query().findOne({ id }).withGraphFetched('images');
+
+  if (!product) {
+    throw new CustomError(404, "Product not found");
+  }
+
+  if(product.images.length !== 0)
+    await Promise.all(product.images?.map(async ({ path }) => {
+      await unlink(join(process.env.UPLOADS_FOLDER, basename(path)));
+    }));
+
+  await product.$query().delete();
+
+  res.sendStatus(200);
+});
+
+export { getAllProducts, getProduct, createProduct, getProductsByCategory, manageCart, deleteProduct };
