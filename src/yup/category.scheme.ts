@@ -16,4 +16,8 @@ const createCategoryValidation = yup.object().shape({
     .optional()
 });
 
-export { getAllCategoriesValidation, createCategoryValidation };
+const deleteCategoryValidation = yup.object().shape({
+  id: yup.number().required('Category id can\'t be empty'),
+});
+
+export { getAllCategoriesValidation, createCategoryValidation, deleteCategoryValidation };
