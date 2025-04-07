@@ -33,7 +33,12 @@ const createOrder = asyncHandler(async (req: Request, res: Response): Promise<vo
       price: +item.product?.price || 0,
     }));
 
-    await OrderItem.query(trx).insert(orderItems);
+    await OrderItem
+      .query(trx)
+      .toKnexQuery()
+      .insert(orderItems)
+      .onConflict()
+      .ignore();
 
     await Cart.query(trx).where("user_id", userId).del();
 
