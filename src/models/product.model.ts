@@ -14,7 +14,7 @@ class Product extends Model {
   updated_at: string;
   category: Category;
   user: User;
-  images: ProductsImages[];
+  images?: ProductsImages[];
   main_image?: number;
   upc?: string;
   

@@ -82,5 +82,30 @@ const findOrCreateCategory = async (categoryInput: CategoryInput | CategoryWithP
   });
 };
 
+const deleteCategory = async (categoryId: number): Promise<void> => {
+  await Category.transaction(async trx => {
+    const category = await Category.query(trx).findById(categoryId);
 
-export { createCategory, findOrCreateCategory };
+    if (!category) {
+      throw new CustomError(404, "Category not found");
+    }
+
+    const { left, right } = category;
+    const width = right - left + 1;
+
+    await Category.query(trx)
+      .delete()
+      .where("left", ">=", left)
+      .andWhere("right", "<=", right);
+
+    await Category.query(trx)
+      .where("left", ">", right)
+      .decrement("left", width);
+
+    await Category.query(trx)
+      .where("right", ">", right)
+      .decrement("right", width);
+  });
+};
+
+export { createCategory, findOrCreateCategory, deleteCategory };

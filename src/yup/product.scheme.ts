@@ -54,4 +54,8 @@ const manageCartValidation = yup.object().shape({
 
 const getAllProductsValidation = yup.object().shape({}).concat(paginationValidation);
 
-export { getAllProductsValidation, createProductValidation, getProductsByCategoryValidation, manageCartValidation };
+const deleteProductValidation = yup.object().shape({
+  id: yup.number().required('Product id can\'t be empty'),
+});
+
+export { getAllProductsValidation, createProductValidation, getProductsByCategoryValidation, manageCartValidation, deleteProductValidation };
